@@ -55,16 +55,23 @@ public class ClienteServiceImpl implements ClienteService {
     }
 
     private void salvarClienteComCep(Cliente cliente) {
-        // Verificar se o Endereco do Cliente já existe (pelo CEP).
+        if (cliente == null) {
+            throw new IllegalArgumentException("Cliente não pode ser nulo");
+        } if (cliente.getEndereco() == null) {
+            throw new IllegalArgumentException("Endereço é obrigatório");
+        } if (cliente.getEndereco().getCep() == null ||
+                cliente.getEndereco().getCep().isBlank()) {
+            throw new IllegalArgumentException("CEP é obrigatório");
+        }
         String cep = cliente.getEndereco().getCep();
-        Endereco endereco = enderecoRepository.findById(cep).orElseGet(() -> {
-            // Caso não exista, integrar com o ViaCEP e persistir o retorno.
-            Endereco novoEndereco = viaCepService.consultarCep(cep);
-            enderecoRepository.save(novoEndereco);
-            return novoEndereco;
-        });
+
+        Endereco endereco = enderecoRepository.findById(cep)
+                .orElseGet(() -> {
+                    Endereco novoEndereco = viaCepService.consultarCep(cep);
+                    return enderecoRepository.save(novoEndereco);
+                });
         cliente.setEndereco(endereco);
-        // Inserir Cliente, vinculando o Endereco (novo ou existente).
         clienteRepository.save(cliente);
     }
+
 }
